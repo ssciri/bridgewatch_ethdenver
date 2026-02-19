@@ -68,8 +68,8 @@ Transaction arrives
 
 ```bash
 # Clone the repo
-git clone https://github.com/ssciri/bridgewatch.git
-cd bridgewatch
+git clone https://github.com/ssciri/bridgewatch_ethdenver.git
+cd bridgewatch_ethdenver
 
 # Install dependencies
 npm install
@@ -109,7 +109,7 @@ npx hardhat run demo/run_demo.js --network sepolia
 
 Open `index.html` in your browser to see the live monitoring dashboard.
 
-**Or visit:** [Live Demo](https://ssciri.github.io/bridgewatch)
+**Or visit:** [Live Demo](https://ssciri.github.io/bridgewatch_ethdenver)
 
 ---
 
@@ -290,6 +290,6 @@ Built with ☕ for ETH Denver 2026
 
 ## 🔗 Links
 
-- [Live Demo](https://ssciri.github.io/bridgewatch)
+- [Live Demo](https://ssciri.github.io/bridgewatch_ethdenver)
 - [Etherscan — SanctionsOracle](https://sepolia.etherscan.io/address/0xf7d4B52e5F36072aB9cfc680476176Ae9982ef0d)
 - [Etherscan — ComplianceGate](https://sepolia.etherscan.io/address/0xb55D2ABc062fA0fE73e78e97fC2bbF5f25DA3FEE)

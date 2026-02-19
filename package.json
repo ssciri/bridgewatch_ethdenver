@@ -1,0 +1,38 @@
+{
+  "name": "bridgewatch",
+  "version": "1.0.0",
+  "description": "Cross-Chain Compliance Intelligence for Global Sanctions Enforcement",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:gas": "REPORT_GAS=true hardhat test",
+    "deploy": "hardhat run scripts/deploy.js",
+    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
+    "demo": "hardhat run demo/run_demo.js",
+    "demo:sepolia": "hardhat run demo/run_demo.js --network sepolia",
+    "clean": "hardhat clean"
+  },
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "sanctions",
+    "compliance",
+    "defi",
+    "bridge",
+    "ofac",
+    "security"
+  ],
+  "author": "BridgeWatch Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@openzeppelin/contracts": "^5.0.0",
+    "dotenv": "^16.3.1",
+    "hardhat": "^2.19.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ssciri/bridgewatch.git"
+  }
+}

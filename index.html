@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BridgeWatch Live Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Mono', 'Consolas', monospace;
+            background: #0a0e17;
+            color: #e0e6ed;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(180deg, #0f1520 0%, #0a0e17 100%);
+            border-bottom: 1px solid #1e2a3a;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            font-size: 32px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-subtitle {
+            font-size: 11px;
+            color: #5a6a7a;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #00ff88;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .network-badge {
+            background: rgba(138, 43, 226, 0.2);
+            border: 1px solid rgba(138, 43, 226, 0.4);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #a855f7;
+        }
+
+        /* Main Content */
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            padding: 20px;
+            height: calc(100vh - 80px);
+        }
+
+        /* Transaction Feed */
+        .feed-section {
+            background: #0f1520;
+            border: 1px solid #1e2a3a;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .feed-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #1e2a3a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .feed-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feed-filters {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #1e2a3a;
+            color: #8892a0;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: #00d4ff;
+            color: #00d4ff;
+        }
+
+        .feed-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        /* Transaction Row */
+        .tx-row {
+            display: grid;
+            grid-template-columns: 80px 1fr 120px 100px 80px 100px;
+            gap: 15px;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid transparent;
+            animation: slideIn 0.3s ease;
+            font-size: 12px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .tx-row.approved { border-left-color: #00ff88; }
+        .tx-row.flagged { border-left-color: #ffa500; background: rgba(255, 165, 0, 0.05); }
+        .tx-row.blocked { border-left-color: #ff4757; background: rgba(255, 71, 87, 0.08); }
+
+        .tx-time {
+            color: #5a6a7a;
+            font-size: 11px;
+        }
+
+        .tx-addresses {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tx-addr {
+            font-family: monospace;
+            color: #8892a0;
+        }
+
+        .tx-arrow {
+            color: #3a4a5a;
+        }
+
+        .tx-bridge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .bridge-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            background: #1e2a3a;
+        }
+
+        .tx-value {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .tx-score {
+            text-align: center;
+        }
+
+        .score-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .score-badge.low {
+            background: rgba(0, 255, 136, 0.15);
+            color: #00ff88;
+        }
+
+        .score-badge.medium {
+            background: rgba(255, 165, 0, 0.15);
+            color: #ffa500;
+        }
+
+        .score-badge.high {
+            background: rgba(255, 71, 87, 0.15);
+            color: #ff4757;
+        }
+
+        .tx-status {
+            text-align: center;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.approved {
+            background: rgba(0, 255, 136, 0.15);
+            color: #00ff88;
+        }
+
+        .status-badge.flagged {
+            background: rgba(255, 165, 0, 0.15);
+            color: #ffa500;
+        }
+
+        .status-badge.blocked {
+            background: rgba(255, 71, 87, 0.15);
+            color: #ff4757;
+        }
+
+        /* Alert Row */
+        .tx-row.blocked .alert-info {
+            grid-column: 1 / -1;
+            margin-top: 10px;
+            padding: 10px 15px;
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .alert-flag {
+            font-size: 24px;
+        }
+
+        .alert-text {
+            flex: 1;
+        }
+
+        .alert-title {
+            color: #ff4757;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .alert-details {
+            color: #8892a0;
+            font-size: 11px;
+        }
+
+        /* Right Panel */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel-card {
+            background: #0f1520;
+            border: 1px solid #1e2a3a;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .panel-title {
+            font-size: 12px;
+            color: #5a6a7a;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .stat-box {
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-value.green { color: #00ff88; }
+        .stat-value.yellow { color: #ffa500; }
+        .stat-value.red { color: #ff4757; }
+        .stat-value.blue { color: #00d4ff; }
+
+        .stat-label {
+            font-size: 11px;
+            color: #5a6a7a;
+        }
+
+        /* Threat Coverage */
+        .threat-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .threat-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+        }
+
+        .threat-flag {
+            font-size: 20px;
+        }
+
+        .threat-info {
+            flex: 1;
+        }
+
+        .threat-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .threat-desc {
+            font-size: 10px;
+            color: #5a6a7a;
+        }
+
+        .threat-count {
+            font-size: 12px;
+            color: #ff4757;
+            font-weight: 600;
+        }
+
+        /* Detection Layers */
+        .layers-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .layer-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .layer-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .layer-icon.l1 {
+            background: rgba(0, 212, 255, 0.15);
+        }
+
+        .layer-icon.l2 {
+            background: rgba(0, 255, 136, 0.15);
+        }
+
+        .layer-info {
+            flex: 1;
+        }
+
+        .layer-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .layer-desc {
+            font-size: 10px;
+            color: #5a6a7a;
+        }
+
+        .layer-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff88;
+        }
+
+        /* Contract Links */
+        .contract-links {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .contract-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .contract-link:hover {
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .contract-name {
+            font-size: 11px;
+            color: #00d4ff;
+        }
+
+        .contract-addr {
+            font-size: 10px;
+            color: #5a6a7a;
+            font-family: monospace;
+        }
+
+        .link-arrow {
+            color: #00d4ff;
+        }
+
+        /* Volume Chart */
+        .chart-container {
+            height: 80px;
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            margin-top: 10px;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: linear-gradient(180deg, #00d4ff 0%, #00ff88 100%);
+            border-radius: 3px 3px 0 0;
+            transition: height 0.5s ease;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 15px;
+            color: #3a4a5a;
+            font-size: 11px;
+            border-top: 1px solid #1e2a3a;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">🛡️</div>
+            <div>
+                <div class="logo-text">BridgeWatch</div>
+                <div class="logo-subtitle">Cross-Chain Compliance Intelligence</div>
+            </div>
+        </div>
+        <div class="status">
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                LIVE MONITORING
+            </div>
+            <div class="network-badge">Ethereum Sepolia</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+        <!-- Transaction Feed -->
+        <div class="feed-section">
+            <div class="feed-header">
+                <div class="feed-title">
+                    📊 Transaction Feed
+                    <span id="txCount" style="color: #5a6a7a; font-weight: 400;">(0 transactions)</span>
+                </div>
+                <div class="feed-filters">
+                    <button class="filter-btn active">All</button>
+                    <button class="filter-btn">Flagged</button>
+                    <button class="filter-btn">Blocked</button>
+                </div>
+            </div>
+            <div class="feed-content" id="txFeed">
+                <!-- Transactions will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <!-- Stats -->
+            <div class="panel-card">
+                <div class="panel-title">Live Statistics</div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-value blue" id="statTotal">0</div>
+                        <div class="stat-label">Total Scanned</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value green" id="statApproved">0</div>
+                        <div class="stat-label">Approved</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value yellow" id="statFlagged">0</div>
+                        <div class="stat-label">Flagged</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value red" id="statBlocked">0</div>
+                        <div class="stat-label">Blocked</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Volume Chart -->
+            <div class="panel-card">
+                <div class="panel-title">Transaction Volume (24h)</div>
+                <div class="chart-container" id="volumeChart">
+                    <!-- Bars inserted dynamically -->
+                </div>
+            </div>
+
+            <!-- Detection Layers -->
+            <div class="panel-card">
+                <div class="panel-title">Detection Layers</div>
+                <div class="layers-list">
+                    <div class="layer-item">
+                        <div class="layer-icon l1">🔍</div>
+                        <div class="layer-info">
+                            <div class="layer-name">Layer 1: OFAC Screening</div>
+                            <div class="layer-desc">12,847 sanctioned entities</div>
+                        </div>
+                        <div class="layer-status"></div>
+                    </div>
+                    <div class="layer-item">
+                        <div class="layer-icon l2">🧠</div>
+                        <div class="layer-info">
+                            <div class="layer-name">Layer 2: NLP Analysis</div>
+                            <div class="layer-desc">Behavioral pattern detection</div>
+                        </div>
+                        <div class="layer-status"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Threat Coverage -->
+            <div class="panel-card">
+                <div class="panel-title">Threat Coverage</div>
+                <div class="threat-list">
+                    <div class="threat-item">
+                        <div class="threat-flag">🇰🇵</div>
+                        <div class="threat-info">
+                            <div class="threat-name">North Korea</div>
+                            <div class="threat-desc">Lazarus Group</div>
+                        </div>
+                        <div class="threat-count">847</div>
+                    </div>
+                    <div class="threat-item">
+                        <div class="threat-flag">🇷🇺</div>
+                        <div class="threat-info">
+                            <div class="threat-name">Russia</div>
+                            <div class="threat-desc">Garantex, Oligarchs</div>
+                        </div>
+                        <div class="threat-count">2,341</div>
+                    </div>
+                    <div class="threat-item">
+                        <div class="threat-flag">🇮🇷</div>
+                        <div class="threat-info">
+                            <div class="threat-name">Iran</div>
+                            <div class="threat-desc">Oil-to-crypto networks</div>
+                        </div>
+                        <div class="threat-count">523</div>
+                    </div>
+                    <div class="threat-item">
+                        <div class="threat-flag">🌍</div>
+                        <div class="threat-info">
+                            <div class="threat-name">Other OFAC</div>
+                            <div class="threat-desc">Mixers, Cartels, Terrorists</div>
+                        </div>
+                        <div class="threat-count">9,136</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contract Links -->
+            <div class="panel-card">
+                <div class="panel-title">Deployed Contracts</div>
+                <div class="contract-links">
+                    <a href="https://sepolia.etherscan.io/address/0xf7d4B52e5F36072aB9cfc680476176Ae9982ef0d" target="_blank" class="contract-link">
+                        <div>
+                            <div class="contract-name">SanctionsOracle</div>
+                            <div class="contract-addr">0xf7d4B52e...ef0d</div>
+                        </div>
+                        <span class="link-arrow">→</span>
+                    </a>
+                    <a href="https://sepolia.etherscan.io/address/0xb55D2ABc062fA0fE73e78e97fC2bbF5f25DA3FEE" target="_blank" class="contract-link">
+                        <div>
+                            <div class="contract-name">ComplianceGate</div>
+                            <div class="contract-addr">0xb55D2ABc...3FEE</div>
+                        </div>
+                        <span class="link-arrow">→</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for simulation
+        const bridges = [
+            { name: 'Wormhole', icon: '🌀' },
+            { name: 'LayerZero', icon: '◎' },
+            { name: 'CCTP', icon: '🔵' },
+            { name: 'Stargate', icon: '⭐' }
+        ];
+
+        const tokens = ['ETH', 'USDC', 'USDT', 'WBTC', 'DAI'];
+        
+        const ofacAddresses = [
+            { addr: '0x098B716B8Aaf21512996dC57EB0615e2383E2f96', name: 'Lazarus Group', country: '🇰🇵', org: 'North Korea' },
+            { addr: '0x6f1cA141A28907F78EBAA64FB83A9088b02A8352', name: 'Garantex', country: '🇷🇺', org: 'Russia' },
+            { addr: '0x8589427373D6D84E98730D7795D8f6f8731FDA16', name: 'Tornado Cash', country: '🏴‍☠️', org: 'Mixer' },
+        ];
+
+        // Stats
+        let stats = { total: 0, approved: 0, flagged: 0, blocked: 0 };
+        let txCount = 0;
+
+        // Generate random address
+        function randomAddr() {
+            const chars = '0123456789abcdef';
+            let addr = '0x';
+            for (let i = 0; i < 40; i++) {
+                addr += chars[Math.floor(Math.random() * 16)];
+            }
+            return addr;
+        }
+
+        // Generate random transaction
+        function generateTx() {
+            const random = Math.random();
+            let type, score, status, sender, details = null;
+
+            if (random < 0.02) {
+                // 2% chance: OFAC blocked
+                type = 'blocked';
+                const ofac = ofacAddresses[Math.floor(Math.random() * ofacAddresses.length)];
+                sender = ofac.addr;
+                score = 100;
+                status = 'blocked';
+                details = ofac;
+            } else if (random < 0.10) {
+                // 8% chance: Flagged
+                type = 'flagged';
+                sender = randomAddr();
+                score = Math.floor(Math.random() * 40) + 35; // 35-75
+                status = 'flagged';
+            } else {
+                // 90% chance: Clean
+                type = 'approved';
+                sender = randomAddr();
+                score = Math.floor(Math.random() * 25) + 3; // 3-28
+                status = 'approved';
+            }
+
+            const bridge = bridges[Math.floor(Math.random() * bridges.length)];
+            const token = tokens[Math.floor(Math.random() * tokens.length)];
+            const value = type === 'blocked' ? 
+                (Math.random() * 500 + 100).toFixed(1) : 
+                type === 'flagged' ?
+                Math.floor(Math.random() * 900 + 100) * 1000 : // Round numbers for flagged
+                (Math.random() * 50 + 0.1).toFixed(2);
+
+            return {
+                time: new Date().toLocaleTimeString(),
+                sender: sender,
+                recipient: randomAddr(),
+                bridge: bridge,
+                value: value,
+                token: token,
+                score: score,
+                status: status,
+                details: details
+            };
+        }
+
+        // Render transaction row
+        function renderTx(tx) {
+            let alertHtml = '';
+            if (tx.details) {
+                alertHtml = `
+                    <div class="alert-info">
+                        <div class="alert-flag">${tx.details.country}</div>
+                        <div class="alert-text">
+                            <div class="alert-title">⛔ OFAC SANCTIONED: ${tx.details.name}</div>
+                            <div class="alert-details">SDN List Match • ${tx.details.org} • Transaction Blocked</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const scoreClass = tx.score < 30 ? 'low' : tx.score < 70 ? 'medium' : 'high';
+
+            return `
+                <div class="tx-row ${tx.status}">
+                    <div class="tx-time">${tx.time}</div>
+                    <div class="tx-addresses">
+                        <span class="tx-addr">${tx.sender.slice(0,6)}...${tx.sender.slice(-4)}</span>
+                        <span class="tx-arrow">→</span>
+                        <span class="tx-addr">${tx.recipient.slice(0,6)}...${tx.recipient.slice(-4)}</span>
+                    </div>
+                    <div class="tx-bridge">
+                        <span class="bridge-icon">${tx.bridge.icon}</span>
+                        ${tx.bridge.name}
+                    </div>
+                    <div class="tx-value">${tx.value} ${tx.token}</div>
+                    <div class="tx-score">
+                        <span class="score-badge ${scoreClass}">${tx.score}</span>
+                    </div>
+                    <div class="tx-status">
+                        <span class="status-badge ${tx.status}">
+                            ${tx.status === 'approved' ? '✓' : tx.status === 'flagged' ? '⚠' : '✕'}
+                            ${tx.status}
+                        </span>
+                    </div>
+                    ${alertHtml}
+                </div>
+            `;
+        }
+
+        // Update stats
+        function updateStats(status) {
+            stats.total++;
+            stats[status]++;
+            
+            document.getElementById('statTotal').textContent = stats.total;
+            document.getElementById('statApproved').textContent = stats.approved;
+            document.getElementById('statFlagged').textContent = stats.flagged;
+            document.getElementById('statBlocked').textContent = stats.blocked;
+            document.getElementById('txCount').textContent = `(${stats.total} transactions)`;
+        }
+
+        // Add transaction to feed
+        function addTransaction() {
+            const tx = generateTx();
+            const feed = document.getElementById('txFeed');
+            
+            feed.insertAdjacentHTML('afterbegin', renderTx(tx));
+            updateStats(tx.status);
+
+            // Keep only last 50 transactions in DOM
+            while (feed.children.length > 50) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        // Initialize volume chart
+        function initChart() {
+            const container = document.getElementById('volumeChart');
+            for (let i = 0; i < 24; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                bar.style.height = Math.random() * 60 + 20 + 'px';
+                container.appendChild(bar);
+            }
+        }
+
+        // Update chart periodically
+        function updateChart() {
+            const bars = document.querySelectorAll('.chart-bar');
+            bars.forEach(bar => {
+                bar.style.height = Math.random() * 60 + 20 + 'px';
+            });
+        }
+
+        // Start simulation
+        function startSimulation() {
+            initChart();
+            
+            // Add initial transactions
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => addTransaction(), i * 200);
+            }
+
+            // Add new transaction every 2-4 seconds
+            setInterval(() => {
+                addTransaction();
+            }, Math.random() * 2000 + 2000);
+
+            // Update chart every 10 seconds
+            setInterval(updateChart, 10000);
+        }
+
+        // Start when page loads
+        window.onload = startSimulation;
+    </script>
+</body>
+</html>
